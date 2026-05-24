@@ -16,7 +16,7 @@ Raw Data → Collectors → Normalize → Deduplicate → Store → Agents
 from app.services.normalize import normalize_item, normalize_items, validate_item
 from app.services.deduplicate import deduplicate_items, get_hashes_from_items
 from app.services.storage import StorageService
-from app.services.openai_client import OpenAIClient, call_openai, call_openai_json
+from app.services.openai_client import OpenAIClient, create_openai_client
 from app.services.quote_preserving_summary import (
     extract_key_quotes,
     summarize_preserving_quotes,
