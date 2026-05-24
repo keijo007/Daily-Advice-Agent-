@@ -1,3 +1,5 @@
+import os
+
 """
 Reader Agent - summarizes new content from external sources.
 
@@ -120,13 +122,15 @@ Remember:
 - Separate facts from opinions
 - Be objective and factual
 - No interpretation or judgment"""
-        
+
         try:
             # Call OpenAI
-            result = call_openai_json(
-                system_prompt=self.system_prompt,
-                user_message=user_message,
-                max_tokens=config.MAX_TOKENS_READER,
+    client = create_openai_client(api_key=os.getenv("OPENAI_API_KEY"))
+    result = client.call_with_prompt(
+      system_prompt=self.system_prompt,
+      user_message=user_message,
+      max_tokens=config.MAX_TOKENS_READER,
+    )
             )
             
             print("  ✓ Analysis complete")
