@@ -42,7 +42,20 @@ class StorageService:
 
     def __init__(self, db_path: Path):
         self.db_path = db_path
+        self.conn = None
         self._init_db()
+
+    def connect(self):
+        """Open a persistent SQLite connection for storage operations."""
+        self.disconnect()
+        self.conn = sqlite3.connect(self.db_path)
+        self._init_db()
+
+    def disconnect(self):
+        """Close the persistent SQLite connection if it is open."""
+        if self.conn is not None:
+            self.conn.close()
+            self.conn = None
 
     def _init_db(self):
         """Create tables if they don't exist."""
@@ -283,3 +296,22 @@ class StorageService:
                 insights.append(insight)
 
             return insights
+
+    def get_existing_hashes(self):
+        """Return the set of hashes already stored for content items."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT hash FROM content_items")
+            return {row[0] for row in cursor.fetchall()}
+
+    def save_items(self, items: List[ContentItem]) -> int:
+        """Save a batch of content items and return how many were newly stored."""
+        saved_count = 0
+        for item in items:
+            if self.save_content_item(item):
+                saved_count += 1
+        return saved_count
+
+    def save_insight(self, insight: DailyInsight) -> bool:
+        """Save a DailyInsight using the current storage contract."""
+        return self.save_daily_insight(insight)
