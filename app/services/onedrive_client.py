@@ -3,6 +3,7 @@
 import os
 from typing import List, Optional
 import logging
+from urllib.parse import quote
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,22 @@ class OneDriveClient:
     def _init_graph_client(self):
         """Initialize OneDrive client (requests-based)."""
         logger.info("✓ OneDrive client ready (requests-based)")
+
+    def _drive_base_url(self) -> str:
+        """Return Graph base URL for the target drive."""
+        drive_id = os.getenv("ONEDRIVE_DRIVE_ID", "").strip()
+        user_id = os.getenv("ONEDRIVE_USER_ID", "").strip()
+
+        if drive_id:
+            return f"https://graph.microsoft.com/v1.0/drives/{drive_id}"
+        if user_id:
+            return f"https://graph.microsoft.com/v1.0/users/{user_id}/drive"
+        return "https://graph.microsoft.com/v1.0/me/drive"
+
+    @staticmethod
+    def _encode_path(path: str) -> str:
+        """URL-encode OneDrive path segments while preserving slashes."""
+        return quote(path.strip("/"), safe="/")
 
     def _get_access_token(self) -> Optional[str]:
         """Get Microsoft Graph access token."""
@@ -95,10 +112,12 @@ class OneDriveClient:
         """Create a folder under the given parent path (idempotent)."""
         import requests
 
+        base_url = self._drive_base_url()
         if parent_path:
-            url = f"https://graph.microsoft.com/v1.0/me/drive/root:/{parent_path}:/children"
+            encoded_parent = self._encode_path(parent_path)
+            url = f"{base_url}/root:/{encoded_parent}:/children"
         else:
-            url = "https://graph.microsoft.com/v1.0/me/drive/root/children"
+            url = f"{base_url}/root/children"
 
         body = {
             "name": name,
@@ -143,7 +162,9 @@ class OneDriveClient:
             
             # Get file from OneDrive using Microsoft Graph API
             # First, find the file
-            search_url = f"https://graph.microsoft.com/v1.0/me/drive/root:/{file_path}"
+            base_url = self._drive_base_url()
+            encoded_path = self._encode_path(file_path)
+            search_url = f"{base_url}/root:/{encoded_path}"
             headers = {"Authorization": f"Bearer {access_token}"}
             
             response = requests.get(search_url, headers=headers)
@@ -197,7 +218,9 @@ class OneDriveClient:
                 return None
             
             # List files
-            list_url = f"https://graph.microsoft.com/v1.0/me/drive/root:/{folder_path}:/children"
+            base_url = self._drive_base_url()
+            encoded_path = self._encode_path(folder_path)
+            list_url = f"{base_url}/root:/{encoded_path}:/children"
             headers = {"Authorization": f"Bearer {access_token}"}
             
             response = requests.get(list_url, headers=headers)
@@ -299,7 +322,9 @@ class OneDriveClient:
             
             # Upload file to OneDrive
             # Path format: /drive/root:/path/to/file:/content
-            upload_url = f"https://graph.microsoft.com/v1.0/me/drive/root:{file_path}:/content"
+            base_url = self._drive_base_url()
+            encoded_path = self._encode_path(file_path)
+            upload_url = f"{base_url}/root:/{encoded_path}:/content"
             
             upload_response = requests.put(upload_url, headers=headers, data=content.encode('utf-8'))
             

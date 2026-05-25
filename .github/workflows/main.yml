@@ -39,6 +39,7 @@ jobs:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ONEDRIVE_DIARY_FILE_PATH: "/MY LIFE/My Life Knowledge/🟥-main/🟪Reflection.md"
           ONEDRIVE_DAILY_INSIGHTS_PATH: "/MY LIFE/My Life Knowledge/AI_Thoughts"
+          ONEDRIVE_USER_ID: "keijohar@outlook.com"
         run: |
           python scripts/generate_insight_safe.py
       
@@ -63,6 +64,7 @@ jobs:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ONEDRIVE_DIARY_FILE_PATH: "/MY LIFE/My Life Knowledge/🟥-main/🟪Reflection.md"
           ONEDRIVE_DAILY_INSIGHTS_PATH: "/MY LIFE/My Life Knowledge/AI_Thoughts"
+          ONEDRIVE_USER_ID: "keijohar@outlook.com"
       
       - name: Display generated files
         run: |
