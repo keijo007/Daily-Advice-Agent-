@@ -24,6 +24,7 @@ class OneDriveClient:
         self.client_id = os.getenv("AZURE_CLIENT_ID", "")
         self.client_secret = os.getenv("AZURE_CLIENT_SECRET", "")
         self.refresh_token = os.getenv("ONEDRIVE_REFRESH_TOKEN", "").strip()
+        self.refresh_scope = os.getenv("ONEDRIVE_REFRESH_SCOPE", "").strip()
         self.tenant_id = os.getenv("ONEDRIVE_TENANT_ID", "").strip()
         if not self.tenant_id:
             self.tenant_id = os.getenv("AZURE_TENANT_ID", "").strip()
@@ -35,6 +36,8 @@ class OneDriveClient:
         
         if self.enabled:
             self._init_graph_client()
+        elif self.tenant_id == "consumers" and not self.refresh_token:
+            logger.warning("⚠ OneDrive personal account requires ONEDRIVE_REFRESH_TOKEN")
     
     def _init_graph_client(self):
         """Initialize OneDrive client (requests-based)."""
@@ -179,10 +182,11 @@ class OneDriveClient:
                     "grant_type": "refresh_token",
                     "client_id": self.client_id,
                     "refresh_token": self.refresh_token,
-                    "scope": "offline_access Files.ReadWrite",
                 }
                 if self.client_secret:
                     token_data["client_secret"] = self.client_secret
+                if self.refresh_scope:
+                    token_data["scope"] = self.refresh_scope
             else:
                 token_data = {
                     "grant_type": "client_credentials",
@@ -194,6 +198,7 @@ class OneDriveClient:
             token_response = requests.post(token_url, data=token_data)
             if token_response.status_code != 200:
                 logger.error(f"✗ Failed to get access token: {token_response.status_code}")
+                logger.error(f"✗ Token error response: {token_response.text}")
                 return None
 
             return token_response.json().get("access_token")
